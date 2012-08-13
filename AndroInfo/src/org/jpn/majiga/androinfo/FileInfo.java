@@ -14,7 +14,7 @@ public class FileInfo {
 	String group;
 	long size;
 	String updateTime;
-	String name;
+	private String name;
 	String dir;
 	private int type;
 	private String destPath;
@@ -131,5 +131,14 @@ public class FileInfo {
 	 */
 	public int getMinorNumber() {
 		return minor;
+	}
+
+	/**
+	 * このファイルの名前を返す.
+	 * 
+	 * @return ファイル名
+	 */
+	public String getName() {
+		return name;
 	}
 }
