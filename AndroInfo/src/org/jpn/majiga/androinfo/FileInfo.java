@@ -45,7 +45,7 @@ public class FileInfo {
 		}
 		fileInfo.owner = sp[1];
 		fileInfo.group = sp[2];
-		if (fileInfo.isDir()) {
+		if (fileInfo.isDirectory()) {
 			fileInfo.updateTime = sp[3] + " " + sp[4];
 			fileInfo.name = lsout.substring(lsout.indexOf(fileInfo.updateTime)
 					+ fileInfo.updateTime.length() + 1);
@@ -75,7 +75,7 @@ public class FileInfo {
 		return fileInfo;
 	}
 
-	public boolean isDir() {
+	public boolean isDirectory() {
 		return type == TYPE_DIRECTORY;
 	}
 
