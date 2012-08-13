@@ -1,5 +1,11 @@
 package org.jpn.majiga.androinfo;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
+
 public class FileInfo {
 	static final int TYPE_FILE = 0;
 	static final int TYPE_DIRECTORY = 1;
@@ -15,13 +21,13 @@ public class FileInfo {
 	long size;
 	String updateTime;
 	private String name;
-	String dir;
+	private String dir;
 	private int type;
 	private String destPath;
 	private int major;
 	private int minor;
 
-	public static FileInfo create(String lsout) {
+	public static FileInfo create(String lsout, String dir) {
 		String[] sp = lsout.split("\\s+");
 		FileInfo fileInfo = new FileInfo();
 		fileInfo.permission = sp[0].substring(1);
@@ -43,6 +49,7 @@ public class FileInfo {
 			break;
 		default:
 		}
+		fileInfo.dir = dir;
 		fileInfo.owner = sp[1];
 		fileInfo.group = sp[2];
 		if (fileInfo.isDirectory()) {
@@ -140,5 +147,64 @@ public class FileInfo {
 	 */
 	public String getName() {
 		return name;
+	}
+
+	/**
+	 * このファイルの絶対パスを返す.
+	 * 
+	 * @return 絶対パス
+	 */
+	public String getAbsolutePath() {
+		return dir + name;
+	}
+
+	/**
+	 * @param path
+	 * @return
+	 */
+	private static List<FileInfo> getFileInfo(String path) {
+		ProcessBuilder pb = new ProcessBuilder("ls", "-l", path);
+		BufferedReader br = null;
+		try {
+			Process p = pb.start();
+			br = new BufferedReader(new InputStreamReader(p.getInputStream()));
+			String line;
+			List<FileInfo> fileInfos = new ArrayList<FileInfo>();
+			while ((line = br.readLine()) != null) {
+				fileInfos.add(FileInfo.create(line, path));
+			}
+			return fileInfos;
+		} catch (IOException e) {
+			e.printStackTrace();
+		} finally {
+			if (br != null) {
+				try {
+					br.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * 指定ディレクトリ以下の全ファイル情報を取得する.
+	 * 
+	 * @param dir 取得するディレクトリ
+	 * @return ファイル情報
+	 */
+	private static List<FileInfo> getFileInfoRecursive(String dir) {
+		List<FileInfo> fileInfos = new ArrayList<FileInfo>();
+		List<FileInfo> currents = getFileInfo(dir);
+		for (FileInfo current : currents) {
+			fileInfos.add(current);
+			if (current.isDirectory() && current.permission.charAt(6) == 'r'
+					&& current.permission.charAt(8) == 'x') {
+				fileInfos.addAll(getFileInfoRecursive(current.getAbsolutePath()
+						+ "/"));
+			}
+		}
+		return fileInfos;
 	}
 }
