@@ -47,6 +47,9 @@ public class FileInfo {
 		case 'c':
 			fileInfo.type = TYPE_CHARACTER;
 			break;
+		case 's':
+			fileInfo.type = TYPE_SOCKET;
+			break;
 		default:
 		}
 		fileInfo.dir = dir;
@@ -70,6 +73,10 @@ public class FileInfo {
 			fileInfo.major = Integer.parseInt(sp[3].substring(0,
 					sp[3].length() - 1));
 			fileInfo.minor = Integer.parseInt(sp[4]);
+			fileInfo.name = lsout.substring(lsout.indexOf(fileInfo.updateTime)
+					+ fileInfo.updateTime.length() + 1);
+		} else if (fileInfo.isSocket()) {
+			fileInfo.updateTime = sp[3] + " " + sp[4];
 			fileInfo.name = lsout.substring(lsout.indexOf(fileInfo.updateTime)
 					+ fileInfo.updateTime.length() + 1);
 		} else {
@@ -191,20 +198,40 @@ public class FileInfo {
 	/**
 	 * 指定ディレクトリ以下の全ファイル情報を取得する.
 	 * 
-	 * @param dir 取得するディレクトリ
+	 * @param dir
+	 *            取得するディレクトリ
 	 * @return ファイル情報
 	 */
-	private static List<FileInfo> getFileInfoRecursive(String dir) {
+	public static List<FileInfo> getFileInfoRecursive(String dir) {
 		List<FileInfo> fileInfos = new ArrayList<FileInfo>();
 		List<FileInfo> currents = getFileInfo(dir);
 		for (FileInfo current : currents) {
 			fileInfos.add(current);
 			if (current.isDirectory() && current.permission.charAt(6) == 'r'
-					&& current.permission.charAt(8) == 'x') {
+					&& current.permission.charAt(8) == 'x'
+					&& !current.getAbsolutePath().equals("/mnt/sdcard")) {
 				fileInfos.addAll(getFileInfoRecursive(current.getAbsolutePath()
 						+ "/"));
 			}
 		}
 		return fileInfos;
+	}
+
+	/**
+	 * このファイルが通常のファイルであるかどうか返す.
+	 * 
+	 * @return 通常のファイルならばtrue、通常のファイルでなければfalse
+	 */
+	public boolean isFile() {
+		return type == TYPE_FILE;
+	}
+
+	/**
+	 * このファイルがソケットであるかどうか返す.
+	 * 
+	 * @return ソケットならばtrue、ソケットでなければfalse
+	 */
+	public boolean isSocket() {
+		return type == TYPE_SOCKET;
 	}
 }
