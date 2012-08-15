@@ -13,6 +13,10 @@ import java.util.List;
 
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.content.pm.PackageManager.NameNotFoundException;
 import android.os.AsyncTask;
 import android.os.Build;
 
@@ -35,8 +39,12 @@ public class InfoGatheringTask extends AsyncTask<String, Integer, Void> {
 
 	@Override
 	protected Void doInBackground(String... arg0) {
+		List<String> out = new ArrayList<String>();
+		List<String> pacageTexts = getPackageDatas(context);
+		out.addAll(pacageTexts);
 		List<String> fileInfoTexts = analyzeFileSystem();
-		writeTextFile(fileInfoTexts);
+		out.addAll(fileInfoTexts);
+		writeTextFile(out);
 		return null;
 	}
 
@@ -68,7 +76,6 @@ public class InfoGatheringTask extends AsyncTask<String, Integer, Void> {
 			if (fileInfo.isFile()) {
 				line.append(fileInfo.size);
 			}
-			line.append("\n");
 			lines.add(line.toString());
 		}
 		return lines;
@@ -76,7 +83,7 @@ public class InfoGatheringTask extends AsyncTask<String, Integer, Void> {
 
 	private static void writeTextFile(List<String> lines) {
 		FileOutputStream fos;
-		String fileName = Build.DEVICE + "-" + Build.DISPLAY
+		String fileName = Build.DEVICE + "-" + Build.DISPLAY + "-"
 				+ System.currentTimeMillis() + ".txt";
 		try {
 			fos = new FileOutputStream("/sdcard/" + fileName, true);
@@ -96,5 +103,34 @@ public class InfoGatheringTask extends AsyncTask<String, Integer, Void> {
 			e.printStackTrace();
 		}
 
+	}
+
+	private static List<String> getPackageDatas(Context context) {
+
+		List<String> packageDatas = new ArrayList<String>();
+
+		PackageManager packageManager = context.getPackageManager();
+		List<ApplicationInfo> list = packageManager
+				.getInstalledApplications(PackageManager.GET_META_DATA);
+		for (ApplicationInfo appInfo : list) {
+			StringBuffer data = new StringBuffer();
+			try {
+				PackageInfo packageInfo = packageManager.getPackageInfo(
+						appInfo.packageName, PackageManager.GET_META_DATA);
+				data.append(appInfo.packageName);// パッケージ名
+				data.append(",");
+				data.append(packageInfo.versionName); // バージョン
+			} catch (NameNotFoundException e) {
+				e.printStackTrace();
+			}
+			packageDatas.add(data.toString());
+		}
+		Collections.sort(packageDatas, new Comparator<String>() {
+
+			public int compare(String lhs, String rhs) {
+				return lhs.compareTo(rhs);
+			}
+		});
+		return packageDatas;
 	}
 }
