@@ -6,6 +6,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -34,7 +35,8 @@ public class InfoGatheringTask extends AsyncTask<String, Integer, Void> {
 
 	@Override
 	protected Void doInBackground(String... arg0) {
-		analyzeFileSystem();
+		List<String> fileInfoTexts = analyzeFileSystem();
+		writeTextFile(fileInfoTexts);
 		return null;
 	}
 
@@ -44,7 +46,7 @@ public class InfoGatheringTask extends AsyncTask<String, Integer, Void> {
 		progressDialog.dismiss();
 	}
 
-	private static void analyzeFileSystem() {
+	private static List<String> analyzeFileSystem() {
 		List<FileInfo> files = FileInfo.getFileInfoRecursive("/");
 
 		Collections.sort(files, new Comparator<FileInfo>() {
@@ -52,22 +54,27 @@ public class InfoGatheringTask extends AsyncTask<String, Integer, Void> {
 				return lhs.getAbsolutePath().compareTo(rhs.getAbsolutePath());
 			}
 		});
-
-		StringBuffer sb = new StringBuffer();
+		List<String> lines = new ArrayList<String>();
 		for (FileInfo fileInfo : files) {
-			sb.append(fileInfo.getAbsolutePath());
-			sb.append(",");
-			sb.append(fileInfo.permission);
-			sb.append(",");
-			sb.append(fileInfo.owner);
-			sb.append(",");
-			sb.append(fileInfo.group);
-			sb.append(",");
+			StringBuffer line = new StringBuffer();
+			line.append(fileInfo.getAbsolutePath());
+			line.append(",");
+			line.append(fileInfo.permission);
+			line.append(",");
+			line.append(fileInfo.owner);
+			line.append(",");
+			line.append(fileInfo.group);
+			line.append(",");
 			if (fileInfo.isFile()) {
-				sb.append(fileInfo.size);
+				line.append(fileInfo.size);
 			}
-			sb.append("\n");
+			line.append("\n");
+			lines.add(line.toString());
 		}
+		return lines;
+	}
+
+	private static void writeTextFile(List<String> lines) {
 		FileOutputStream fos;
 		String fileName = Build.DEVICE + "-" + Build.DISPLAY
 				+ System.currentTimeMillis() + ".txt";
@@ -75,8 +82,10 @@ public class InfoGatheringTask extends AsyncTask<String, Integer, Void> {
 			fos = new FileOutputStream("/sdcard/" + fileName, true);
 			OutputStreamWriter osw = new OutputStreamWriter(fos, "UTF-8");
 			BufferedWriter bw = new BufferedWriter(osw);
+			for (String line : lines) {
+				bw.write(line + "\n");
+			}
 
-			bw.write(sb.toString());
 			bw.flush();
 			bw.close();
 		} catch (FileNotFoundException e) {
@@ -86,5 +95,6 @@ public class InfoGatheringTask extends AsyncTask<String, Integer, Void> {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+
 	}
 }
